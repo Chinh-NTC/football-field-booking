@@ -19,11 +19,13 @@ public class BookingService {
     private BookingRepository bookingRepository;
     
     @Autowired
-    private PitchRepository pitchRepository; // Dùng để tìm court và tính tiền
+    private PitchRepository pitchRepository;
+
+    @Autowired
+    private PaymentService paymentService; // Thêm dòng này
 
     public Booking createBooking(BookingRequestDTO request) {
-        // 1. Kiểm tra xem sân có tồn tại không (Tạm tìm qua Pitch)
-        // Lưu ý: Em chưa tạo CourtRepository, tạm dùng logic này. Sau này tối ưu sau.
+        // 1. Kiểm tra xem sân có tồn tại không
         PitchCourt court = pitchRepository.findAll().stream()
                 .flatMap(p -> p.getCourts().stream())
                 .filter(c -> c.getId().equals(request.getCourtId()))
@@ -44,7 +46,7 @@ public class BookingService {
         BigDecimal deposit = totalPrice.multiply(new BigDecimal("0.5")); // Cọc 50%
 
         // 4. Tạo Booking
-        Booking booking = new Booking();
+        Booking booking = new Booking(); // LỖI NĂM Ở ĐÂY, ĐÃ SỬA
         booking.setRefCode("BK" + System.currentTimeMillis() / 1000); // Sinh mã đơn tự động
         booking.setUserId(request.getUserId());
         booking.setCourtId(request.getCourtId());
@@ -55,6 +57,11 @@ public class BookingService {
         booking.setStatus("PENDING"); // Trạng thái chờ thanh toán
         booking.setCreatedAt(LocalDateTime.now());
 
-        return bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking); // Lưu booking trước
+
+        // 5. Tự động tạo bản ghi thanh toán cọc
+        paymentService.createPayment(savedBooking);
+
+        return savedBooking;
     }
 }
