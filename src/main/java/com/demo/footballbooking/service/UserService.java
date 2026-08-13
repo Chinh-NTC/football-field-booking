@@ -1,5 +1,6 @@
 package com.demo.footballbooking.service;
 
+import com.demo.footballbooking.dto.LoginRequestDTO;
 import com.demo.footballbooking.dto.UserRequestDTO;
 import com.demo.footballbooking.dto.UserResponseDTO;
 import com.demo.footballbooking.entity.User;
@@ -9,12 +10,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
+import java.util.Optional;
+import com.demo.footballbooking.security.JwtUtil;
 @Service
 public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     // Hàm tạo User
     public UserResponseDTO createUser(UserRequestDTO request) {
@@ -45,5 +50,19 @@ public class UserService {
             response.setRole(user.getRole());
             return response;
         }).collect(Collectors.toList());
+    }
+
+    public String login(LoginRequestDTO request) {
+        // 1. Tìm user theo username
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("Sai tên đăng nhập hoặc mật khẩu"));
+
+        // 2. Kiểm tra mật khẩu (MVP tạm so sánh chuỗi trực tiếp. Ra làm thật phải dùng BCrypt)
+        if (!user.getPassword().equals(request.getPassword())) {
+            throw new RuntimeException("Sai tên đăng nhập hoặc mật khẩu");
+        }
+
+        // 3. Nếu đúng, tạo token và trả về
+        return jwtUtil.generateToken(user.getUsername(), user.getRole());
     }
 }
