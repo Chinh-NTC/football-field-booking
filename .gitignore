@@ -1,0 +1,21 @@
+# Build output
+target/
+build/
+
+# VSCode
+.vscode/
+.settings/
+
+# Mac
+.DS_Store
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot
+*.log
+*.tmp
+
+# Cấu hình môi trường (Bảo mật)
+.env
+application-local.properties
